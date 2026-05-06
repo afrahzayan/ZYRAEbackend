@@ -43,8 +43,10 @@ const verifyOtp = async (email,userOtp) => {
         
         if(storedOtp === userOtp){
             await client.del(`otp:${email}`);
-            return {success:false}
+            return {success:true}
         }
+
+        return{success:false}
 
     } catch (err) {
         console.log("verify OTP Error:" , err)
