@@ -8,7 +8,8 @@ const tokenRegenerator = (req, res) => {
             return res.status(401).json({ message: "no Refresh_Token Founded" });
         }
 
-        const decode = jwt.varify(token, process.env.REFRESH_TOKEN_KEY);
+        const decode = jwt.verify(token, process.env.REFRESH_TOKEN_KEY);
+        
         const role = decode.role ?? decode.user;
 
 

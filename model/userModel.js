@@ -4,14 +4,14 @@ const userSchema = mongoose.Schema({
     fname: {
         type: String,
         required: true,
-        minlength: 3,
+        minlength: 4,
         trim: true
     },
 
     lname: {
         type: String,
         required: true,
-        minlength: 1,
+        minlength: 3,
         trim: true
     },
 

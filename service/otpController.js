@@ -1,58 +1,94 @@
 const transporter = require("../config/mail");
 const generateOtp = require("../utils/generateOtp")
-const {client} = require("../config/redis")
+const { client } = require("../config/redis")
 require("dotenv").config()
 
 
 const sendOtp = async (email) => {
-    try{
-        const existingOtp = await client.get(`otp:${email}`);
-        if(existingOtp){
-            return{
-                success: false,
-                message: "OTP already sent. try again later"
+    try {
+
+        email = email.trim().toLowerCase();
+
+        const otp = generateOtp();
+
+        console.log("Saving Key:", `otp:${email}`);
+
+        await client.set(
+            `otp:${email}`,
+            otp,
+            {
+                EX: 600
             }
-        }
+        );
 
-        const otp = generateOtp()
+        const checkOtp = await client.get(`otp:${email}`);
 
-        await client.setEx(`otp:${email}`,120,otp)
+        console.log("Saved OTP:", checkOtp);
 
         await transporter.sendMail({
-            form: process.env.EMAIL_USER,
+            from: process.env.EMAIL_USER,
             to: email,
-            subject: "your OTP code",
-            text : `your OTP is ${otp}`
+            subject: "Your OTP Code",
+            text: `Your OTP is ${otp}`
         });
 
-        return {success:true}
-    } catch (err){
-       console.log("send otp error", err);
-       return{success: false, message: "Faild to send OTP"}
-    }
-}
-
-
-const verifyOtp = async (email,userOtp) => {
-    try {
-        const storedOtp = await client.get(`OTP:${email}`)
-
-        if(!storedOtp){
-            return {success:false}
-        }
-        
-        if(storedOtp === userOtp){
-            await client.del(`otp:${email}`);
-            return {success:true}
-        }
-
-        return{success:false}
+        return {
+            success: true
+        };
 
     } catch (err) {
-        console.log("verify OTP Error:" , err)
-        return {success: false, message:"Somthing Went Wrong"}
-        
-    }
-}
 
-module.exports = {sendOtp,verifyOtp}
+        console.log("send otp error", err);
+
+        return {
+            success: false,
+            message: "Failed to send OTP"
+        };
+    }
+};
+
+
+const verifyOtp = async (email, userOtp) => {
+
+    try {
+
+        email = email.trim().toLowerCase();
+
+        console.log("Searching Key:", `otp:${email}`);
+
+        const storedOtp = await client.get(`otp:${email}`);
+
+       
+        if (!storedOtp) {
+            return {
+                success: false,
+                message: "OTP expired"
+            };
+        }
+
+        if (storedOtp.toString() === userOtp.toString()) {
+
+            await client.del(`otp:${email}`);
+
+            return {
+                success: true
+            };
+        }
+
+        return {
+            success: false,
+            message: "Invalid OTP"
+        };
+
+    } catch (err) {
+
+        console.log("verify OTP Error:", err);
+
+        return {
+            success: false,
+            message: "Something Went Wrong"
+        };
+    }
+};
+
+module.exports = { sendOtp, verifyOtp }

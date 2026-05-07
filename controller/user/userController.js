@@ -4,37 +4,57 @@ const userModel = require("../../model/userModel")
 const generateToken = require("../../utils/generateToken")
 const { sendOtp, verifyOtp } = require("../../service/otpController")
 const { client } = require("../../config/redis")
-require("dotenv").config
+require("dotenv").config()
 
 
 const registrationController = async (req, res) => {
-    try {
-        const { fname, lname, email, password } = req.body
+  try {
 
-        const existingUser = await userModel.findOne({ email })
+    const { fname, lname, email, password } = req.body;
 
-        if (existingUser) {
-            return res.status(500).json({ message: "user already existing" })
-        }
+    const existingUser = await userModel.findOne({ email });
 
-        const hashedPassword = await bcrypt.hash(password, 10)
-
-        await client.set(
-            `register:${email}`,
-            JSON.stringify({ name, email, password: hashedPassword }),
-            { EX: 900 },
-        );
-
-        const result = await sendOtp(email);
-
-        if (!result.success) {
-            return res.status(400).json({ message: "Failed to send OTP" });
-        }
-
-        res.status(200).json({ message: "OTP send to email successfully" });
-    } catch (e) {
-        res.status(500).json({ message: "server error" });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists"
+      });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await client.set(
+      `register:${email}`,
+      JSON.stringify({
+        fname,
+        lname,
+        email,
+        password: hashedPassword
+      }),
+      {
+        EX: 900
+      }
+    );
+
+    const result = await sendOtp(email);
+
+    if (!result.success) {
+      return res.status(400).json({
+        message: "Failed to send OTP"
+      });
+    }
+
+    return res.status(200).json({
+      message: "OTP sent successfully"
+    });
+
+  } catch (e) {
+
+    console.log(e);
+
+    return res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
 
 
@@ -63,74 +83,82 @@ const resendOtpController = async (req, res) => {
 
 
 const verifyOtpController = async (req, res) => {
-    try {
-        const { email, otp } = req.body;
-        console.log("userEmail:", email);
-        console.log("userSendOtp:", otp);
 
-        if (!email || !otp) {
-            return res.status(400).json({ message: "Email and Otp are required " });
-        }
+  try {
 
-        const result = await verifyOTP(email, otp);
+    const { email, otp } = req.body;
+    
 
-        if (!result.success) {
-            if (result.message === "OTP expried") {
-                return res.status(404).json({ message: "OTP expried" });
-            }
-            if (result.message === "Invalid OTP") {
-                return res.status(401).json({ message: "Invalid OTP" });
-            }
-
-            return res.status(400).json({ message: "Verification failed" });
-        }
-
-        const userData = await client.get(`register:${email}`);
-
-        if (!userData) {
-            return res
-                .status(400)
-                .json({ message: "Registration session expired ,Reregister" });
-        }
-
-        const { name, password } = JSON.parse(userData);
-
-        const newUser = await userModel.create({
-            name,
-            email,
-            password,
-        });
-
-        await client.del(`register:${email}`);
-
-        const { RefreshToken, AccessToken } = generateToken(
-            newUser.email,
-            newUser._id,
-            newUser.role,
-        );
-
-        res
-            .status(201)
-            .cookie("Access_Token", AccessToken, {
-                secure: true,
-                sameSite: "none",
-                httpOnly: true,
-            })
-            .cookie("Refresh_Token", RefreshToken, {
-                secure: true,
-                sameSite: "none",
-                httpOnly: true,
-            })
-            .json({
-                message: "User registered successfully",
-                role: newUser.role,
-                name: newUser.name,
-                email: newUser.email,
-            });
-    } catch (e) {
-        console.log("error occures", e.message);
-        res.status(500).json({ message: "Server Error" });
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Email and OTP required"
+      });
     }
+
+    const result = await verifyOtp(email, otp);
+
+    if (!result.success) {
+      return res.status(400).json({
+        message: result.message
+      });
+    }
+
+    const userData = await client.get(`register:${email}`);
+
+    if (!userData) {
+      return res.status(400).json({
+        message: "Registration expired"
+      });
+    }
+
+    const parsedData = JSON.parse(userData);
+
+    const newUser = await userModel.create({
+      fname: parsedData.fname,
+      lname: parsedData.lname,
+      email: parsedData.email,
+      password: parsedData.password
+    });
+
+    await client.del(`register:${email}`);
+
+    const { AccessToken, RefreshToken } = generateToken(
+      newUser.email,
+      newUser._id,
+      newUser.role
+    );
+
+    return res
+      .status(201)
+      .cookie("Access_Token", AccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+      })
+      .cookie("Refresh_Token", RefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+      })
+      .json({
+        success: true,
+        message: "User registered successfully",
+        user: {
+          fname: newUser.fname,
+          lname: newUser.lname,
+          email: newUser.email,
+          role: newUser.role
+        }
+      });
+
+  } catch (e) {
+
+    console.log(e);
+
+    return res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
 
 
@@ -147,7 +175,7 @@ const loginController = async (req, res) => {
             return res.status(401).json({ message: "invalid email or password" })
         }
 
-        if (isUser.isBlocked) {
+        if (isUser.Blocked) {
             return res.status(403).json({ message: "access denied. please try again later" }); 5
         }
 
@@ -177,11 +205,12 @@ const loginController = async (req, res) => {
                 sameSite: "none",
             })
             .json({
-                message: "Login successful",
-                role: isUser.role,
-                name: isUser.name,
-                email: isUser.email,
-            });
+    message: "Login successful",
+    role: isUser.role,
+    fname: isUser.fname,
+    lname: isUser.lname,
+    email: isUser.email,
+});
      } catch (e) {
     console.error("LoginController error:", e.message);
 
@@ -218,24 +247,30 @@ const getLoginUser = async (req, res) => {
 
 
 const logoutController = async (req, res) => {
+
   try {
+
     res
       .clearCookie("Access_Token", {
-        sameSite: "lax",
         httpOnly: true,
         secure: true,
-        sameSite: "none",
+        sameSite: "none"
       })
       .clearCookie("Refresh_Token", {
-        sameSite: "lax",
         httpOnly: true,
         secure: true,
-        sameSite: "none",
+        sameSite: "none"
       })
       .status(200)
-      .json({ Message: "Logout successful" });
+      .json({
+        message: "Logout successful"
+      });
+
   } catch (e) {
-    res.status(500).json({ Message: "Logout error" });
+
+    return res.status(500).json({
+      message: "Logout Error"
+    });
   }
 };
 
