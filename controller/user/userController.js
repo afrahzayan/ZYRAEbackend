@@ -6,66 +6,59 @@ const { sendOtp, verifyOtp } = require("../../service/otpController")
 const { client } = require("../../config/redis")
 require("dotenv").config()
 
-
 const registrationController = async (req, res) => {
-  try {
+    try {
+        const { fname, lname, email, password } = req.body;
 
-    const { fname, lname, email, password } = req.body;
+        const existingUser = await userModel.findOne({ email });
 
-    const existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                message: "User already exists"
+            });
+        }
 
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists"
-      });
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await client.set(
+            `register:${email}`,
+            JSON.stringify({
+                fname,
+                lname,
+                email,
+                password: hashedPassword
+            }),
+            {
+                EX: 900
+            }
+        );
+
+        const result = await sendOtp(email);
+
+        if (!result.success) {
+            return res.status(400).json({
+                message: "Failed to send OTP"
+            });
+        }
+
+        return res.status(200).json({
+            message: "OTP sent successfully"
+        });
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            message: "Server Error"
+        });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await client.set(
-      `register:${email}`,
-      JSON.stringify({
-        fname,
-        lname,
-        email,
-        password: hashedPassword
-      }),
-      {
-        EX: 900
-      }
-    );
-
-    const result = await sendOtp(email);
-
-    if (!result.success) {
-      return res.status(400).json({
-        message: "Failed to send OTP"
-      });
-    }
-
-    return res.status(200).json({
-      message: "OTP sent successfully"
-    });
-
-  } catch (e) {
-
-    console.log(e);
-
-    return res.status(500).json({
-      message: "Server Error"
-    });
-  }
 };
-
-
-
 
 const resendOtpController = async (req, res) => {
     try {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ message: "eamil is required" });
+            return res.status(400).json({ message: "email is required" });
         }
 
         const result = await sendOtp(email);
@@ -79,111 +72,102 @@ const resendOtpController = async (req, res) => {
     }
 };
 
-
-
-
 const verifyOtpController = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
 
-  try {
-
-    const { email, otp } = req.body;
-    
-
-    if (!email || !otp) {
-      return res.status(400).json({
-        message: "Email and OTP required"
-      });
-    }
-
-    const result = await verifyOtp(email, otp);
-
-    if (!result.success) {
-      return res.status(400).json({
-        message: result.message
-      });
-    }
-
-    const userData = await client.get(`register:${email}`);
-
-    if (!userData) {
-      return res.status(400).json({
-        message: "Registration expired"
-      });
-    }
-
-    const parsedData = JSON.parse(userData);
-
-    const newUser = await userModel.create({
-      fname: parsedData.fname,
-      lname: parsedData.lname,
-      email: parsedData.email,
-      password: parsedData.password
-    });
-
-    await client.del(`register:${email}`);
-
-    const { AccessToken, RefreshToken } = generateToken(
-      newUser.email,
-      newUser._id,
-      newUser.role
-    );
-
-    return res
-      .status(201)
-      .cookie("Access_Token", AccessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none"
-      })
-      .cookie("Refresh_Token", RefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none"
-      })
-      .json({
-        success: true,
-        message: "User registered successfully",
-        user: {
-          fname: newUser.fname,
-          lname: newUser.lname,
-          email: newUser.email,
-          role: newUser.role
+        if (!email || !otp) {
+            return res.status(400).json({
+                message: "Email and OTP required"
+            });
         }
-      });
 
-  } catch (e) {
+        const result = await verifyOtp(email, otp);
 
-    console.log(e);
+        if (!result.success) {
+            return res.status(400).json({
+                message: result.message
+            });
+        }
 
-    return res.status(500).json({
-      message: "Server Error"
-    });
-  }
+        const userData = await client.get(`register:${email}`);
+
+        if (!userData) {
+            return res.status(400).json({
+                message: "Registration expired"
+            });
+        }
+
+        const parsedData = JSON.parse(userData);
+
+        const newUser = await userModel.create({
+            fname: parsedData.fname,
+            lname: parsedData.lname,
+            email: parsedData.email,
+            password: parsedData.password,
+            blocked: false  // Explicitly set blocked to false
+        });
+
+        await client.del(`register:${email}`);
+
+        const { AccessToken, RefreshToken } = generateToken(
+            newUser.email,
+            newUser._id,
+            newUser.role
+        );
+
+        return res
+            .status(201)
+            .cookie("Access_Token", AccessToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none"
+            })
+            .cookie("Refresh_Token", RefreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none"
+            })
+            .json({
+                success: true,
+                message: "User registered successfully",
+                user: {
+                    fname: newUser.fname,
+                    lname: newUser.lname,
+                    email: newUser.email,
+                    role: newUser.role
+                }
+            });
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            message: "Server Error"
+        });
+    }
 };
 
-
-
-
-
+// FIXED LOGIN CONTROLLER
 const loginController = async (req, res) => {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body;
 
-        const isUser = await userModel.findOne({ email }).select("+password")
+        // Find user with password field
+        const isUser = await userModel.findOne({ email }).select("+password");
 
         if (!isUser) {
-            return res.status(401).json({ message: "invalid email or password" })
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        if (isUser.Blocked) {
-            return res.status(403).json({ message: "access denied. please try again later" }); 5
+        // FIX: Use 'blocked' (lowercase b) not 'Blocked'
+        if (isUser.blocked) {
+            return res.status(403).json({ message: "Access denied. Your account has been blocked." });
         }
 
+        const isValid = await bcrypt.compare(password, isUser.password);
 
-        const isvalid = await bcrypt.compare(password, isUser.password)
-
-        if (!isvalid) {
-            return res.status(401).json({ message: "invalid password" })
+        if (!isValid) {
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const { RefreshToken, AccessToken } = generateToken(
@@ -198,89 +182,86 @@ const loginController = async (req, res) => {
                 secure: true,
                 sameSite: "none",
             })
-
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: "none",
             })
             .json({
-    message: "Login successful",
-    role: isUser.role,
-    fname: isUser.fname,
-    lname: isUser.lname,
-    email: isUser.email,
-});
-     } catch (e) {
-    console.error("LoginController error:", e.message);
+                message: "Login successful",
+                role: isUser.role,
+                fname: isUser.fname,
+                lname: isUser.lname,
+                email: isUser.email,
+            });
 
-    return res.status(e.status || 500).json({
-      message: e.message,
-    });
-  }
+    } catch (e) {
+        console.error("LoginController error:", e.message);
+        return res.status(500).json({
+            message: "Server error during login",
+        });
+    }
 };
-
-
-
 
 const getLoginUser = async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ Message: "Unauthorized" });
+    try {
+        if (!req.user) {
+            return res.status(401).json({ Message: "Unauthorized" });
+        }
+
+        // Get user ID from multiple possible locations
+        const userId = req.user.userID || req.user.id;
+        
+        const userData = await userModel.findById(userId);
+
+        if (!userData) {
+            return res.status(404).json({ Message: "User not found" });
+        }
+
+        res.status(200).json({
+            Message: "User found",
+            UserData: userData,
+        });
+    } catch (e) {
+        console.error("Error in getLoginUser:", e);
+        res.status(500).json({
+            Message: "Error in GetLoginUser",
+            Error: e.message,
+        });
     }
-
-    const userData = await userModel.findOne({ _id: req.user.userID });
-
-    res.status(200).json({
-      Message: "User found",
-      UserData: userData,
-    });
-  } catch (e) {
-    res.status(500).json({
-      Message: "Error in GetLoginUser",
-      Error: e.message,
-    });
-  }
 };
-
-
-
 
 const logoutController = async (req, res) => {
+    try {
+        res
+            .clearCookie("Access_Token", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none"
+            })
+            .clearCookie("Refresh_Token", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none"
+            })
+            .status(200)
+            .json({
+                message: "Logout successful"
+            });
 
-  try {
-
-    res
-      .clearCookie("Access_Token", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none"
-      })
-      .clearCookie("Refresh_Token", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none"
-      })
-      .status(200)
-      .json({
-        message: "Logout successful"
-      });
-
-  } catch (e) {
-
-    return res.status(500).json({
-      message: "Logout Error"
-    });
-  }
+    } catch (e) {
+        return res.status(500).json({
+            message: "Logout Error"
+        });
+    }
 };
 
-
-
-
-module.exports = { registrationController,
-     loginController,
-      resendOtpController,
-      verifyOtpController,
-      loginController,
-      getLoginUser,
-     logoutController }
+// FIXED EXPORTS (removed duplicate loginController)
+module.exports = { 
+    registrationController,
+    loginController,
+    resendOtpController,
+    verifyOtpController,
+    getLoginUser,
+    logoutController 
+};

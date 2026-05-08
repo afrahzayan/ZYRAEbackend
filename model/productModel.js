@@ -1,5 +1,3 @@
-
-
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema({
@@ -20,8 +18,7 @@ const productSchema = new mongoose.Schema({
     },
 
     category: {
-        type: String,
-        required: true
+        type: String
     },
 
     description: {

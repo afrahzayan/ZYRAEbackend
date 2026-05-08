@@ -15,6 +15,12 @@ const PORT = process.env.PORT || 5000;
 // Routes
 const userRoute = require("./routes/user/userRoutes.js");
 const productRoute = require("./routes/user/productRoute.js")
+const cartRoute = require("./routes/user/cartRoute.js")
+const wishListRoute= require("./routes/user/wishListRoute.js")
+
+const productRouteAdmin = require("./routes/admin/productRoute.js")
+
+app.use(express.json())
 
 // Middlewares
 app.use(express.json());
@@ -27,9 +33,12 @@ app.use(
     })
 );
 
-// Routes
+
 app.use("/api/auth", userRoute);
-app.use("/api/product",productRoute)
+app.use("/api/product",productRoute);
+app.use("/api/admin/product",productRouteAdmin);
+app.use("/api/cart",cartRoute);
+app.use("/api/wishList",wishListRoute)
 
 // Start Server
 const startServer = async () => {
