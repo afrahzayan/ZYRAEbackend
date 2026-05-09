@@ -1,4 +1,3 @@
-
 const express = require("express");
 require("dotenv").config();
 
@@ -10,55 +9,61 @@ const { connectRedis } = require("./config/redis.js");
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ;
 
-// Routes
+// ROUTES
 const userRoute = require("./routes/user/userRoutes.js");
-const productRoute = require("./routes/user/productRoute.js")
-const cartRoute = require("./routes/user/cartRoute.js")
-const wishListRoute= require("./routes/user/wishListRoute.js")
+const productRoute = require("./routes/user/productRoute.js");
+const cartRoute = require("./routes/user/cartRoute.js");
+const wishListRoute = require("./routes/user/wishListRoute.js");
+const orderRoute = require("./routes/user/orderRoute.js");
+const stripeWebhook = require("./controller/user/stripeWebhook.js")
 
-const productRouteAdmin = require("./routes/admin/productRoute.js")
+const productRouteAdmin = require("./routes/admin/productRoute.js");
 
-app.use(express.json())
+// WEBHOOK FIRST
+app.post(
+  "/api/orders/webhook",
+  express.raw({ type: "application/json" }), stripeWebhook);
 
-// Middlewares
+// NORMAL MIDDLEWARES
 app.use(express.json());
+
 app.use(cookieParser());
 
 app.use(
-    cors({
-        origin: "http://localhost:5173", // frontend URL
-        credentials: true,
-    })
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
 );
 
-
+// ROUTES
 app.use("/api/auth", userRoute);
-app.use("/api/product",productRoute);
-app.use("/api/admin/product",productRouteAdmin);
-app.use("/api/cart",cartRoute);
-app.use("/api/wishList",wishListRoute)
+app.use("/api/product", productRoute);
+app.use("/api/admin/product", productRouteAdmin);
+app.use("/api/cart", cartRoute);
+app.use("/api/wishList", wishListRoute);
+app.use("/api/orders", orderRoute);
 
-// Start Server
+// SERVER
 const startServer = async () => {
-    try {
-        // MongoDB Connection
-        await connectDB();
+  try {
 
-        // Redis Connection
-        await connectRedis();
+    await connectDB();
 
-        // Start Express Server
-        app.listen(PORT, () => {
-            console.log(`Server Running Successfully on Port ${PORT}`);
-        });
+    await connectRedis();
 
-    } catch (e) {
-        console.log("Server start error:", e.message);
-        process.exit(1);
-    }
+    app.listen(PORT, () => {
+      console.log(`Server Running on Port ${PORT}`);
+    });
+
+  } catch (e) {
+
+    console.log("Server start error:", e.message);
+
+    process.exit(1);
+  }
 };
 
 startServer();
-

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { success } = require("zod/mini");
 
 const tokenRegenerator = (req, res) => {
     try {
@@ -10,17 +11,17 @@ const tokenRegenerator = (req, res) => {
 
         const decode = jwt.verify(token, process.env.REFRESH_TOKEN_KEY);
         
-        const role = decode.role ?? decode.user;
+        const role = decode.role || decode.user || "user";
 
 
         const AccessToken = jwt.sign(
-            { Email: decode.Email, Id: decode.Id, role },
+            { Email: decode.Email, Id: decode.Id, role: role },
             process.env.ACCESS_TOKEN_KEY,
-            { expiresIn: "15m" },
+            { expiresIn: "1m" },
         );
 
         const RefreshToken = jwt.sign(
-            { Email: decode.Email, Id: decode.Id, role },
+            { Email: decode.Email, Id: decode.Id, role : role },
             process.env.REFRESH_TOKEN_KEY,
             { expiresIn: "7d" },
         );
@@ -28,16 +29,36 @@ const tokenRegenerator = (req, res) => {
            res .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "none",
+                sameSite: "lax",
+                maxAge: 15 * 60 * 1000
             })
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: "none",
+                maxAge: 7 * 24 * 60 * 60 * 1000
             })
-            .json({ Message: "SuccessFuly Regenrator Access_Token" });
+            .json({success: true,
+                 Message: "SuccessFuly Regenrator Access_Token" });
     } catch (e) {
-        res.status(401).json({ Message: "Refresh Token expired" });
+         console.error("Token regeneration error:", e.message);
+        
+        
+        res.clearCookie("Access_Token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+        })
+        .clearCookie("Refresh_Token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+        })
+        .status(401)
+        .json({ 
+            success: false,
+            message: "Refresh Token expired. Please login again." 
+        });
     }
 };
 
