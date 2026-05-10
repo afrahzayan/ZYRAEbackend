@@ -5,6 +5,24 @@ const createCodOrder = async (req, res) => {
     const userId = req.user.userID;
     const orderData = req.body;
     
+    // Validate required fields
+    if (!orderData.items || orderData.items.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Cart is empty" 
+      });
+    }
+    
+    // Validate each item has productId
+    for (const item of orderData.items) {
+      if (!item.productId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Each item must have a productId" 
+        });
+      }
+    }
+    
     // Save order to database
     const newOrder = await orderModel.create({
       orderNumber: `COD-${Date.now()}`,

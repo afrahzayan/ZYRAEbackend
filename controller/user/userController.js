@@ -120,13 +120,13 @@ const verifyOtpController = async (req, res) => {
             .status(201)
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none"
+                secure: false,
+                sameSite: "lax"
             })
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none"
+                secure: false,
+                sameSite: "lax"
             })
             .json({
                 success: true,
@@ -179,13 +179,13 @@ const loginController = async (req, res) => {
         return res.status(200)
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none",
+                secure: false,
+                sameSite: "lax",
             })
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none",
+                secure: false,
+                sameSite: "lax",
             })
             .json({
                 message: "Login successful",
@@ -236,13 +236,13 @@ const logoutController = async (req, res) => {
         res
             .clearCookie("Access_Token", {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none"
+                secure: false,
+                sameSite: "lax"
             })
             .clearCookie("Refresh_Token", {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none"
+                secure: false,
+                sameSite: "lax"
             })
             .status(200)
             .json({

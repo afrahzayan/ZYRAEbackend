@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
-const { string } = require("zod/mini");
+
 
 const orderSchema = new mongoose.Schema(
   {
-    orderNumber: string,
+   orderNumber: String,
     
     userId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,64 +1,95 @@
 const jwt = require("jsonwebtoken");
-const { success } = require("zod/mini");
 
 const tokenRegenerator = (req, res) => {
     try {
-        let token = req.cookies?.Refresh_Token;
+
+        const token = req.cookies?.Refresh_Token;
 
         if (!token) {
-            return res.status(401).json({ message: "no Refresh_Token Founded" });
+            return res.status(401).json({
+                message: "No Refresh Token Found"
+            });
         }
 
-        const decode = jwt.verify(token, process.env.REFRESH_TOKEN_KEY);
-        
-        const role = decode.role || decode.user || "user";
+        const decode = jwt.verify(
+            token,
+            process.env.REFRESH_TOKEN_KEY
+        );
 
+        const role = decode.role || "user";
 
         const AccessToken = jwt.sign(
-            { Email: decode.Email, Id: decode.Id, role: role },
+            {
+                Email: decode.Email,
+                Id: decode.Id,
+                role
+            },
             process.env.ACCESS_TOKEN_KEY,
-            { expiresIn: "1m" },
+            {
+                expiresIn: "15m"
+            }
         );
 
         const RefreshToken = jwt.sign(
-            { Email: decode.Email, Id: decode.Id, role : role },
+            {
+                Email: decode.Email,
+                Id: decode.Id,
+                role
+            },
             process.env.REFRESH_TOKEN_KEY,
-            { expiresIn: "7d" },
+            {
+                expiresIn: "7d"
+            }
         );
 
-           res .cookie("Access_Token", AccessToken, {
+        return res
+            .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                secure: true,
+                secure: false,
                 sameSite: "lax",
                 maxAge: 15 * 60 * 1000
             })
+
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: "none",
+                secure: false,
+                sameSite: "lax",
                 maxAge: 7 * 24 * 60 * 60 * 1000
             })
-            .json({success: true,
-                 Message: "SuccessFuly Regenrator Access_Token" });
+
+            .status(200)
+            .json({
+                success: true,
+                message: "Access token regenerated successfully"
+            });
+
     } catch (e) {
-         console.error("Token regeneration error:", e.message);
-        
-        
-        res.clearCookie("Access_Token", {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none"
-        })
-        .clearCookie("Refresh_Token", {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none"
-        })
-        .status(401)
-        .json({ 
-            success: false,
-            message: "Refresh Token expired. Please login again." 
-        });
+
+        console.error(
+            "Token regeneration error:",
+            e.message
+        );
+
+        return res
+
+            .clearCookie("Access_Token", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax"
+            })
+
+            .clearCookie("Refresh_Token", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax"
+            })
+
+            .status(401)
+
+            .json({
+                success: false,
+                message: "Refresh token expired. Please login again."
+            });
     }
 };
 
