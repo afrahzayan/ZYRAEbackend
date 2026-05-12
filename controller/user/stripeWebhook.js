@@ -41,7 +41,7 @@ if (order && order.paymentStatus !== "paid") {
   for (const item of order.items) {
 
     const product = await productModel.findById(
-      item.productId
+      item.product
     );
 
     if (product) {

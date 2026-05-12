@@ -1,29 +1,36 @@
 const mongoose = require("mongoose");
+const { required } = require("zod/mini");
 
 
 const orderSchema = new mongoose.Schema(
   {
    orderNumber: String,
     
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "user"
+    user:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"User",
+        required:true
     },
 
-    userName: String,
-    userEmail: String,
-    userPhone: String,
-
-    items: [
-      {
-        productId: String,
-        name: String,
-        price: Number,
-        image: String,
-        quantity: Number,
-        size: String
-      }
+    items:[
+        {
+            product:{
+                type:mongoose.Schema.Types.ObjectId,
+                ref:"Products",
+                require:true
+            },
+            quantity:{
+                type:Number,
+                require:true,
+                default:1
+            },
+            price:{
+                type:Number,
+                require:true
+            }
+        }
     ],
+    
 
     shippingAddress: String,
     shippingCity: String,

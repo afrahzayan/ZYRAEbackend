@@ -5,13 +5,14 @@ const router = express.Router();
 
 const {
     getProducts,
-    getSingleProduct
+    getSingleProduct,
+    softDeleteProduct
 } = require("../../controller/user/productController");
 
 
 
 router.get("/", getProducts);
 router.get("/:id", getSingleProduct);
-
+router.put("/product/delete/:id",softDeleteProduct)
 
 module.exports = router;
