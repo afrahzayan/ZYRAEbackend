@@ -11,7 +11,7 @@ const app = express();
 
 const PORT = process.env.PORT ;
 
-// ROUTES
+// USER
 const userRoute = require("./routes/user/userRoutes.js");
 const productRoute = require("./routes/user/productRoute.js");
 const cartRoute = require("./routes/user/cartRoute.js");
@@ -19,7 +19,9 @@ const wishListRoute = require("./routes/user/wishListRoute.js");
 const orderRoute = require("./routes/user/orderRoute.js");
 const stripeWebhook = require("./controller/user/stripeWebhook.js")
 
+// ADMIN
 const productRouteAdmin = require("./routes/admin/productRoute.js");
+const userRouteAdmin = require("./routes/admin/userRoute.js")
 
 // WEBHOOK FIRST
 app.post(
@@ -38,13 +40,17 @@ app.use(
   })
 );
 
-// ROUTES
+// USER
 app.use("/api/auth", userRoute);
 app.use("/api/product", productRoute);
-app.use("/api/admin/product", productRouteAdmin);
 app.use("/api/cart", cartRoute);
 app.use("/api/wishList", wishListRoute);
 app.use("/api/orders", orderRoute);
+
+//ADMIN
+app.use("/api/admin/product", productRouteAdmin);
+app.use("/api/admin/user",userRouteAdmin)
+
 
 // SERVER
 const startServer = async () => {

@@ -10,7 +10,7 @@ const registrationController = async (req, res) => {
     try {
         const { fname, lname, email, password } = req.body;
 
-        const existingUser = await userModel.findOne({ email });
+        const existingUser = await userModel.findOne({ email, isDeleted: false });
 
         if (existingUser) {
             return res.status(400).json({
@@ -153,8 +153,10 @@ const loginController = async (req, res) => {
         const { email, password } = req.body;
 
         // Find user with password field
-        const isUser = await userModel.findOne({ email }).select("+password");
-
+        const isUser = await userModel.findOne({
+            email,
+            isDeleted: false
+        }).select("+password");
         if (!isUser) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
@@ -211,9 +213,11 @@ const getLoginUser = async (req, res) => {
 
         // Get user ID from multiple possible locations
         const userId = req.user.userID || req.user.id;
-        
-        const userData = await userModel.findById(userId);
 
+        const userData = await userModel.findOne({
+            _id: userId,
+            isDeleted: false
+        });
         if (!userData) {
             return res.status(404).json({ Message: "User not found" });
         }
@@ -256,12 +260,16 @@ const logoutController = async (req, res) => {
     }
 };
 
+
+
+
 // FIXED EXPORTS (removed duplicate loginController)
-module.exports = { 
+module.exports = {
     registrationController,
     loginController,
     resendOtpController,
     verifyOtpController,
     getLoginUser,
-    logoutController 
+    logoutController,
+    
 };

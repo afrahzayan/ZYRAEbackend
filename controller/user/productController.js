@@ -11,10 +11,12 @@ const getProducts = async (req, res) => {
         if (collection) {
             query.collection = { $regex: new RegExp(`^${collection}$`, 'i') }; // Case-insensitive match
         }
-
         const products = await productModel.find({
             ...query,
-            isDeleted: false
+            $or: [
+                { isDeleted: false },
+                { isDeleted: { $exists: false } }
+            ]
         }).lean();
         const formattedProducts = products.map(product => ({
             id: product._id.toString(),
@@ -46,7 +48,10 @@ const getSingleProduct = async (req, res) => {
     try {
         const product = await productModel.findOne({
             _id: req.params.id,
-            isDeleted: false
+            $or: [
+                { isDeleted: false },
+                { isDeleted: { $exists: false } }
+            ]
         }).lean();
 
         if (!product) {
@@ -80,43 +85,10 @@ const getSingleProduct = async (req, res) => {
     }
 };
 
-const softDeleteProduct = async (req, res) => {
-    try {
 
-        const product = await productModel.findByIdAndUpdate(
-            req.params.id,
-            {
-                isDeleted: true,
-                deletedAt: new Date()
-            },
-            { new: true }
-        );
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Product soft deleted successfully"
-        });
-
-    } catch (err) {
-
-        res.status(500).json({
-            success: false,
-            message: "Error deleting product",
-            error: err.message
-        });
-
-    }
-};
 
 module.exports = {
     getProducts,
     getSingleProduct,
-    softDeleteProduct
+    
 };

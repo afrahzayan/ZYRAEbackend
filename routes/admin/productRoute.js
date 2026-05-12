@@ -1,13 +1,18 @@
 const express = require("express");
+
 const router = express.Router();
 
 const {
-    addProduct
+    addProduct,
+    getProducts,
+    updateProduct,
+    softDeleteProduct
 } = require("../../controller/admin/productController");
 
-const upload = require("../../middleware/multer");
 
-// ADD PRODUCT
-router.post("/add", upload.single("image"), addProduct);
+router.get("/", getProducts);
+router.post("/", addProduct)
+router.put("/:id", updateProduct);
+router.delete("/delete/:id", softDeleteProduct);
 
 module.exports = router;

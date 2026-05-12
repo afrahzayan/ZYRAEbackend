@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-
+const softDeleteMiddleware = require("../middleware/softDelete")
 const userSchema = mongoose.Schema({
     fname: {
         type: String,
@@ -40,12 +40,25 @@ const userSchema = mongoose.Schema({
     blocked: {
         type: Boolean,
         default: false
-    }
+    },
+
+    isDeleted: {
+    type: Boolean,
+    default: false
+},
+
+deletedAt: {
+    type: Date,
+    default: null
+}
 }, 
 
 { timestamps: true }
     
 )
+
+userSchema.pre(/^find/, softDeleteMiddleware);
+
 
 const userModel = mongoose.model("Users", userSchema)
 module.exports=userModel

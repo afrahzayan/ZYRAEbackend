@@ -1,6 +1,7 @@
 const productModel = require("../../model/productModel");
 
-// ADD PRODUCT
+
+// ================= ADD PRODUCT =================
 const addProduct = async (req, res) => {
 
     try {
@@ -14,24 +15,20 @@ const addProduct = async (req, res) => {
             stock
         } = req.body;
 
-        // CLOUDINARY IMAGE URL
         const image = req.file ? req.file.path : "";
 
-        // VALIDATION
         if (!name || !price || !image) {
-
             return res.status(400).json({
                 success: false,
                 message: "Please fill all required fields"
             });
-
         }
 
-        // CREATE PRODUCT
         const newProduct = new productModel({
             name,
             price,
             image,
+            category,
             description,
             collection,
             stock
@@ -42,15 +39,7 @@ const addProduct = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Product added successfully",
-            product: {
-                id: newProduct._id,
-                name: newProduct.name,
-                price: newProduct.price,
-                image: newProduct.image,
-                description: newProduct.description,
-                collection: newProduct.collection,
-                stock: newProduct.stock
-            }
+            product: newProduct
         });
 
     } catch (err) {
@@ -64,6 +53,112 @@ const addProduct = async (req, res) => {
     }
 };
 
+
+// ================= GET PRODUCTS =================
+const getProducts = async (req, res) => {
+
+    try {
+
+        const products = await productModel.find()
+
+        res.status(200).json(products);
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            message: "Error fetching products"
+        });
+
+    }
+};
+
+
+// ================= UPDATE PRODUCT =================
+const updateProduct = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const updatedProduct = await productModel.findByIdAndUpdate(
+            id,
+            req.body,
+            { new: true }
+        );
+
+        if (!updatedProduct) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Product updated successfully",
+            product: updatedProduct
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            message: "Error updating product"
+        });
+
+    }
+};
+
+
+// ================= SOFT DELETE PRODUCT =================
+const softDeleteProduct = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const existingProduct = await productModel.findById(id);
+
+        if (!existingProduct) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+
+        }
+
+        await productModel.findByIdAndUpdate(
+            id,
+            {
+                isDeleted: true,
+                deletedAt: new Date()
+            },
+            { new: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Product deleted successfully"
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            message: "Error deleting product"
+        });
+
+    }
+};
+
+
 module.exports = {
-    addProduct
+    addProduct,
+    getProducts,
+    updateProduct,
+    softDeleteProduct
 };

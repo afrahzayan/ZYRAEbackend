@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { boolean } = require("zod/mini");
+const softDeleteMiddleware= require("../middleware/softDelete")
 
 const productSchema = new mongoose.Schema({
 
@@ -48,5 +48,8 @@ const productSchema = new mongoose.Schema({
 }, {
     timestamps: true,
 });
+
+productSchema.pre(/^find/, softDeleteMiddleware);
+
 
 module.exports = mongoose.model("Product", productSchema);
