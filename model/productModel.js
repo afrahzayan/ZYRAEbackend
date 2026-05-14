@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const softDeleteMiddleware= require("../middleware/softDelete")
+const softDeleteMiddleware = require("../middleware/softDelete");
 
 const productSchema = new mongoose.Schema({
 
@@ -18,16 +18,14 @@ const productSchema = new mongoose.Schema({
         required: true
     },
 
-    category: {
-        type: String
-    },
-
     description: {
-        type: String
+        type: String,
+        default: ""
     },
 
     collection: {
-        type: String
+        type: String,
+        default: ""
     },
 
     stock: {
@@ -50,6 +48,5 @@ const productSchema = new mongoose.Schema({
 });
 
 productSchema.pre(/^find/, softDeleteMiddleware);
-
 
 module.exports = mongoose.model("Product", productSchema);

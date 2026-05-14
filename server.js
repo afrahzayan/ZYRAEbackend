@@ -22,6 +22,7 @@ const stripeWebhook = require("./controller/user/stripeWebhook.js")
 // ADMIN
 const productRouteAdmin = require("./routes/admin/productRoute.js");
 const userRouteAdmin = require("./routes/admin/userRoute.js")
+const orderRouteAdmin = require("./routes/admin/orderRoute.js")
 
 // WEBHOOK FIRST
 app.post(
@@ -40,19 +41,21 @@ app.use(
   })
 );
 
-// USER
+//USER
 app.use("/api/auth", userRoute);
 app.use("/api/product", productRoute);
 app.use("/api/cart", cartRoute);
 app.use("/api/wishList", wishListRoute);
 app.use("/api/orders", orderRoute);
 
+
 //ADMIN
 app.use("/api/admin/product", productRouteAdmin);
-app.use("/api/admin/user",userRouteAdmin)
+app.use("/api/admin/user",userRouteAdmin);
+app.use("/api/admin/orders",orderRouteAdmin);
 
 
-// SERVER
+//SERVER
 const startServer = async () => {
   try {
 

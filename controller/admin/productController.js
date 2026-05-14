@@ -1,21 +1,20 @@
 const productModel = require("../../model/productModel");
 
 
-// ================= ADD PRODUCT =================
+
 const addProduct = async (req, res) => {
 
     try {
 
-        const {
-            name,
-            price,
-            category,
-            description,
-            collection,
-            stock
-        } = req.body;
+       const {
+    name,
+    price,
+    description,
+    collection,
+    stock
+} = req.body;
 
-        const image = req.file ? req.file.path : "";
+       const image = req.file ? req.file.path : "";
 
         if (!name || !price || !image) {
             return res.status(400).json({
@@ -28,7 +27,6 @@ const addProduct = async (req, res) => {
             name,
             price,
             image,
-            category,
             description,
             collection,
             stock
@@ -54,7 +52,8 @@ const addProduct = async (req, res) => {
 };
 
 
-// ================= GET PRODUCTS =================
+
+
 const getProducts = async (req, res) => {
 
     try {
@@ -74,7 +73,8 @@ const getProducts = async (req, res) => {
 };
 
 
-// ================= UPDATE PRODUCT =================
+
+
 const updateProduct = async (req, res) => {
 
     try {
@@ -113,7 +113,7 @@ const updateProduct = async (req, res) => {
 };
 
 
-// ================= SOFT DELETE PRODUCT =================
+
 const softDeleteProduct = async (req, res) => {
 
     try {
