@@ -6,13 +6,14 @@ const {
     addProduct,
     getProducts,
     updateProduct,
-    softDeleteProduct
+    softDeleteProduct,
+    getCollections
 } = require("../../controller/admin/productController");
 
-
+router.get("/collections",getCollections)
 router.get("/", getProducts);
 router.post("/", upload.single("image"), addProduct)
-router.put("/:id", updateProduct);
+router.put("/:id",upload.single("image"), updateProduct);
 router.delete("/delete/:id", softDeleteProduct);
 
 module.exports = router;

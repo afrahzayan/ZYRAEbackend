@@ -54,19 +54,85 @@ const addProduct = async (req, res) => {
 
 
 
+
 const getProducts = async (req, res) => {
 
     try {
 
-        const products = await productModel.find()
+        const {
+            search = "",
+            collection = "all",
+            sortBy = "",
+            page = 1,
+            limit = 5
+        } = req.query;
 
-        res.status(200).json(products);
+        let filter = {}
+
+        // SEARCH
+        if (search) {
+            filter.$or = [
+                {
+                    name: {
+                        $regex: search,
+                        $options: "i"
+                    }
+                },
+                {
+                    collection: {
+                        $regex: search,
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+        // COLLECTION FILTER
+        if (collection !== "all") {
+            filter.collection = collection;
+        }
+
+        // SORTING
+        let query = productModel.find(filter);
+
+     if (sortBy === "name") {
+            query = query.sort({ name: 1 });
+        }
+
+        if (sortBy === "price") {
+            query = query.sort({ price: 1 });
+        }
+
+        if (sortBy === "collection") {
+            query = query.sort({ collection: 1 });
+        }
+
+
+        const skip = (Number(page) -1) * Number(limit);
+         query = query.skip(skip).limit(Number(limit));
+
+          const products = await query;
+
+         const totalProducts = await productModel.countDocuments(filter);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+          const collections = await productModel.distinct("collection");
+
+        res.status(200).json({
+            success: true,
+            products,
+            collections,
+            currentPage: Number(page),
+            totalPages,
+            totalProducts
+        });
 
     } catch (err) {
 
         res.status(500).json({
             success: false,
-            message: "Error fetching products"
+            message: "Error fetching products",
+            error: err.message
         });
 
     }
@@ -156,9 +222,32 @@ const softDeleteProduct = async (req, res) => {
 };
 
 
+const getCollections = async (req, res) => {
+
+    try {
+
+        const collections = await productModel.distinct("collection");
+
+        res.status(200).json({
+            success: true,
+            collections
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            message: "Error fetching collections"
+        });
+
+    }
+};
+
+
 module.exports = {
     addProduct,
     getProducts,
     updateProduct,
-    softDeleteProduct
+    softDeleteProduct,
+    getCollections
 };
