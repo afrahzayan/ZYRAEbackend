@@ -4,7 +4,7 @@ const { required } = require("zod/mini");
 
 const orderSchema = new mongoose.Schema(
   {
-   orderNumber: String,
+   
     
     user:{
         type:mongoose.Schema.Types.ObjectId,
@@ -41,7 +41,9 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: String,
 
-    orderNumber: String,
+    orderNumber: {
+        type: String
+    },
 
     paymentStatus: {
       type: String,

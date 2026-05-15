@@ -23,7 +23,7 @@ const stripeWebhook = require("./controller/user/stripeWebhook.js")
 const productRouteAdmin = require("./routes/admin/productRoute.js");
 const userRouteAdmin = require("./routes/admin/userRoute.js")
 const orderRouteAdmin = require("./routes/admin/orderRoute.js")
-
+const dashboardRoute = require('./routes/admin/dashboardRoute.js')
 // WEBHOOK FIRST
 app.post(
   "/api/orders/webhook",
@@ -53,7 +53,7 @@ app.use("/api/orders", orderRoute);
 app.use("/api/admin/product", productRouteAdmin);
 app.use("/api/admin/user",userRouteAdmin);
 app.use("/api/admin/orders",orderRouteAdmin);
-
+app.use("/api/admin/dashboard",dashboardRoute)
 
 //SERVER
 const startServer = async () => {

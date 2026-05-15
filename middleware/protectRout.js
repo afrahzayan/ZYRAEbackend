@@ -6,9 +6,7 @@ const protectRoutes = async (req, res, next) => {
     try {
         let token = req.cookies?.Access_Token;
         
-        console.log("=== PROTECT ROUTES DEBUG ===");
-        console.log("Token received:", token ? "Yes" : "No");
-        
+          
         if (!token) {
             return res.status(401).json({ Message: "Unauthorized, Please Login First" });
         }
@@ -38,8 +36,7 @@ const protectRoutes = async (req, res, next) => {
             blocked: user.blocked,
         };
         
-        console.log("req.user set with id:", req.user.id);
-        console.log("==================================");
+        
         
         next();
 

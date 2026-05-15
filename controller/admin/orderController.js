@@ -1,173 +1,74 @@
 const orderModel = require("../../model/orderModel");
 
-// -----------------------------------------------------
+
 // GET ALL ORDERS (ADMIN)
-// -----------------------------------------------------
-
-const fetchAllOrders = async (req, res) => {
+const getAllOrders = async (req, res) => {
   try {
 
-    const { status, search } = req.query;
-
-    const filter = {};
-
-    // Filter by order status
-    if (status) {
-      filter.status = status;
-    }
-
     const orders = await orderModel
+      .find()
+      .populate("user")
+      .sort({ createdAt: -1 });
 
-      .find(filter)
+    // FORMAT DATA FOR FRONTEND
+    const formattedOrders = orders.map((order) => ({
+      id: order._id.toString(),      orderNumber: order.orderNumber,
+      userName: order.user?.fname || "Unknown User",
+      userEmail: order.user?.email || "No Email",
+      orderDate: order.createdAt,
+      totalAmount: order.totalAmount,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      status: order.status
+    }));
 
-      .populate({
-        path: "user",
-        match: search
-          ? {
-              name: {
-                $regex: search,
-                $options: "i",
-              },
-            }
-          : {},
-        select: "name email",
-      })
-
-      .populate({
-        path: "items.product",
-        select: "name image price",
-      })
-
-      .sort({ createdAt: -1 })
-
-      .lean();
-
-    // remove orders where user not matched
-    const filteredOrders = orders.filter((order) => order.user);
-
-    res.status(200).json({
-      success: true,
-      totalOrders: filteredOrders.length,
-      data: filteredOrders,
-    });
+    res.status(200).json(formattedOrders);
 
   } catch (error) {
-
-    console.log("fetchAllOrders error:", error);
-
+    console.log(error);
     res.status(500).json({
-      success: false,
-      message: "Error fetching orders",
+      message: "Failed to fetch orders"
     });
-
   }
 };
 
-// -----------------------------------------------------
-// GET SINGLE USER ORDERS
-// -----------------------------------------------------
 
-const specificUserOrderList = async (req, res) => {
-  try {
 
-    const { id } = req.params;
-
-    const orders = await orderModel
-
-      .find({ user: id })
-
-      .populate({
-        path: "user",
-        select: "name email",
-      })
-
-      .populate({
-        path: "items.product",
-        select: "name image price",
-      })
-
-      .sort({ createdAt: -1 })
-
-      .lean();
-
-    res.status(200).json({
-      success: true,
-      data: orders,
-    });
-
-  } catch (error) {
-
-    console.log("specificUserOrderList error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Error fetching user orders",
-    });
-
-  }
-};
-
-// -----------------------------------------------------
-// UPDATE ORDER STATUS
-// -----------------------------------------------------
-
+// UPDATE ORDER STATUS (ADMIN)
 const updateOrderStatus = async (req, res) => {
   try {
 
     const { id } = req.params;
-
     const { status } = req.body;
 
-    const order = await orderModel.findById(id);
+    const updatedOrder = await orderModel.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
 
-    if (!order) {
+    if (!updatedOrder) {
       return res.status(404).json({
-        success: false,
-        message: "Order not found",
+        message: "Order not found"
       });
     }
 
-    order.status = status;
-
-    // Payment status update
-    if (status === "delivered") {
-
-      order.paymentStatus = "paid";
-
-    } else if (status === "cancelled") {
-
-      order.paymentStatus = "failed";
-
-    } else {
-
-      if (order.paymentMethod === "COD") {
-        order.paymentStatus = "pending";
-      }
-
-    }
-
-    await order.save();
-
     res.status(200).json({
-      success: true,
       message: "Order status updated successfully",
-      data: order,
+      updatedOrder
     });
 
   } catch (error) {
-
-    console.log("updateOrderStatus error:", error);
-
+    console.log(error);
     res.status(500).json({
-      success: false,
-      message: "Error updating order status",
+      message: "Failed to update order status"
     });
-
   }
 };
 
+
+
 module.exports = {
-  fetchAllOrders,
-  specificUserOrderList,
-  updateOrderStatus,
+  getAllOrders,
+  updateOrderStatus
 };
