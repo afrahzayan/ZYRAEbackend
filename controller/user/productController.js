@@ -1,23 +1,40 @@
 const productModel = require("../../model/productModel");
 
-// GET ALL PRODUCTS (with optional collection filter)
+
+
+// GET ALL PRODUCTS WITH PAGINATION
 const getProducts = async (req, res) => {
     try {
-        const { collection } = req.query; // Get collection from query params
 
-        let query = {};
+        const {
+            collection,
+            page = 1,
+            limit = 8
+        } = req.query;
 
-        // If collection parameter is provided, filter by it
+        let query = {}
+
+        
         if (collection) {
-            query.collection = { $regex: new RegExp(`^${collection}$`, 'i') }; // Case-insensitive match
+            query.collection = {
+                $regex: new RegExp(`^${collection}$`, 'i')
+            };
         }
-        const products = await productModel.find({
-            ...query,
-            $or: [
-                { isDeleted: false },
-                { isDeleted: { $exists: false } }
-            ]
-        }).lean();
+
+        
+        const skip = (Number(page) - 1) * Number(limit);
+
+        
+        const totalProducts = await productModel.countDocuments(query);
+
+        
+        const products = await productModel.find(query)
+            .skip(skip)
+            .limit(Number(limit))
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // FORMAT PRODUCTS
         const formattedProducts = products.map(product => ({
             id: product._id.toString(),
             name: product.name,
@@ -28,20 +45,29 @@ const getProducts = async (req, res) => {
             stock: product.stock
         }));
 
+        // TOTAL PAGES
+        const totalPages = Math.ceil(totalProducts / Number(limit));
+
         res.status(200).json({
             success: true,
-            count: formattedProducts.length,
-            products: formattedProducts
+            products: formattedProducts,
+            currentPage: Number(page),
+            totalPages,
+            totalProducts
         });
 
     } catch (err) {
+
         res.status(500).json({
             success: false,
             message: "Error fetching products",
             error: err.message
         });
+
     }
 };
+
+
 
 // GET SINGLE PRODUCT
 const getSingleProduct = async (req, res) => {
