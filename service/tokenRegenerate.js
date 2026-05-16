@@ -45,15 +45,15 @@ const tokenRegenerator = (req, res) => {
         return res
             .cookie("Access_Token", AccessToken, {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax",
+                secure: true,
+                sameSite: "None",
                 maxAge: 15 * 60 * 1000
             })
 
             .cookie("Refresh_Token", RefreshToken, {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax",
+                secure: true,
+                sameSite: "None",
                 maxAge: 7 * 24 * 60 * 60 * 1000
             })
 
@@ -74,14 +74,14 @@ const tokenRegenerator = (req, res) => {
 
             .clearCookie("Access_Token", {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax"
+                secure: true,
+                sameSite: "None"
             })
 
             .clearCookie("Refresh_Token", {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax"
+                secure: true,
+                sameSite: "None"
             })
 
             .status(401)
