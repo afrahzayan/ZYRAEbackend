@@ -26,7 +26,7 @@ const tokenRegenerator = (req, res) => {
             },
             process.env.ACCESS_TOKEN_KEY,
             {
-                expiresIn: "45m"
+                expiresIn: "15m"
             }
         );
 
