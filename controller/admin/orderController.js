@@ -1,7 +1,7 @@
 const orderModel = require("../../model/orderModel");
 
 
-// GET ALL ORDERS (ADMIN)
+
 const getAllOrders = async (req, res) => {
   try {
 
@@ -9,6 +9,7 @@ const getAllOrders = async (req, res) => {
       .find()
       .populate("user")
       .sort({ createdAt: -1 });
+
 
     // FORMAT DATA FOR FRONTEND
     const formattedOrders = orders.map((order) => ({
@@ -34,7 +35,7 @@ const getAllOrders = async (req, res) => {
 
 
 
-// UPDATE ORDER STATUS (ADMIN)
+
 const updateOrderStatus = async (req, res) => {
   try {
 

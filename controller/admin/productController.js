@@ -69,7 +69,7 @@ const getProducts = async (req, res) => {
 
         let filter = {}
 
-        // SEARCH
+        
         if (search) {
             filter.$or = [
                 {
@@ -87,12 +87,10 @@ const getProducts = async (req, res) => {
             ];
         }
 
-        // COLLECTION FILTER
         if (collection !== "all") {
             filter.collection = collection;
         }
 
-        // SORTING
         let query = productModel.find(filter);
 
      if (sortBy === "name") {
