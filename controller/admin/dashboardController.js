@@ -20,28 +20,6 @@ const getAdminDashboard = async (req, res) => {
       0
     );
 
-    // RECENT ORDERS
-    const recentOrders = orders
-      .slice(0, 5)
-      .map((order) => ({
-        _id: order._id,
-        orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount,
-        status: order.status,
-        orderDate: order.createdAt,
-
-        userName: order.user
-          ? `${order.user.fname} ${order.user.lname}`
-          : "Unknown User"
-      }));
-
-    // RECENT USERS
-    const recentUsers = users
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt) - new Date(a.createdAt)
-      )
-      .slice(0, 5);
 
     // MONTHLY REVENUE
     const months = [
@@ -157,8 +135,7 @@ const getAdminDashboard = async (req, res) => {
       totalOrders: orders.length,
       totalRevenue,
 
-      recentOrders,
-      recentUsers,
+      
 
       revenueChartData: monthlyRevenue,
       orderStatusData,
