@@ -19,9 +19,7 @@ const stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Acknowledge immediately — Stripe requires a fast 2xx response.
-  // If we do DB work before responding, Stripe may time out and retry,
-  // causing the event to be processed twice.
+  
   res.json({ received: true });
 
   if (event.type === "checkout.session.completed") {
@@ -35,20 +33,17 @@ const stripeWebhook = async (req, res) => {
         return;
       }
 
-      // Idempotency guard — Stripe may deliver the same event more than once
       if (order.paymentStatus === "paid") {
         console.log(`Webhook: Order ${order._id} already marked paid — skipping`);
         return;
       }
 
-      // Mark paid FIRST so the order is in a valid state even if stock
-      // updates fail partway through
+    
       order.paymentStatus = "paid";
       order.status = "processing";
       await order.save();
 
-      // Decrement stock per item; isolate failures so one bad product
-      // doesn't block the rest
+   
       for (const item of order.items) {
         try {
           const product = await productModel.findById(item.product);

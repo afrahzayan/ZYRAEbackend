@@ -105,7 +105,7 @@ const verifyOtpController = async (req, res) => {
             lname: parsedData.lname,
             email: parsedData.email,
             password: parsedData.password,
-            blocked: false  // Explicitly set blocked to false
+            blocked: false  
         });
 
         await client.del(`register:${email}`);
@@ -147,12 +147,12 @@ const verifyOtpController = async (req, res) => {
     }
 };
 
-// FIXED LOGIN CONTROLLER
+
+
 const loginController = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user with password field
         const isUser = await userModel.findOne({
             email,
             isDeleted: false
@@ -161,7 +161,6 @@ const loginController = async (req, res) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        // FIX: Use 'blocked' (lowercase b) not 'Blocked'
         if (isUser.blocked) {
             return res.status(403).json({ message: "Access denied. Your account has been blocked." });
         }
@@ -211,7 +210,6 @@ const getLoginUser = async (req, res) => {
             return res.status(401).json({ Message: "Unauthorized" });
         }
 
-        // Get user ID from multiple possible locations
         const userId = req.user.userID || req.user.id;
 
         const userData = await userModel.findOne({
@@ -263,7 +261,6 @@ const logoutController = async (req, res) => {
 
 
 
-// FIXED EXPORTS (removed duplicate loginController)
 module.exports = {
     registrationController,
     loginController,

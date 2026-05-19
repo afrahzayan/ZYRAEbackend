@@ -23,10 +23,7 @@ const createCodOrder = async (req, res) => {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    // Items arrive flat from the frontend's normalizeCartItem():
-    //   { productId, name, price, image, quantity, size? }
-    // Store name and image directly on the order so the Orders page can
-    // render items without re-populating from the product collection.
+    
     const formattedItems = items.map((item) => ({
       product:  item.productId || item.id,
       name:     item.name,
